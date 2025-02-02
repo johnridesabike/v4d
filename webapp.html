@@ -1,0 +1,131 @@
+<!doctype html>
+<!--                                                                     -->
+<!--                    Copyright (c) John Jackson.                      -->
+<!--                                                                     -->
+<!-- This Source Code Form is subject to the terms of the Mozilla Public -->
+<!-- License, v. 2.0. If a copy of the MPL was not distributed with this -->
+<!-- file, You can obtain one at http://mozilla.org/MPL/2.0/.            -->
+<!--                                                                     -->
+<html lang="en">
+  <head>
+    <title>V4D: Visualize 4D Shapes</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #faffff;
+        color: #0f0500;
+      }
+      h1 {
+        font-size: 1.25rem;
+        text-align: center;
+      }
+      h2 {
+        font-size: 1.125rem;
+      }
+      a,
+      a:visited {
+        color: #006e52;
+      }
+      a:active,
+      a:focus,
+      a:hover {
+        color: #071e85;
+        text-decoration: underline;
+      }
+      input {
+        accent-color: #006e52;
+      }
+      main {
+        height: 100vh;
+        display: grid;
+        overflow-y: hidden;
+      }
+      .canvas-container {
+        width: 100%;
+        height: 100%;
+        min-width: 250px;
+        overflow: hidden;
+        grid-area: canvas;
+        background: #0d1a16;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        touch-action: none;
+      }
+      canvas {
+        height: 100vmin;
+        width: 100vmin;
+      }
+      .controls-container {
+        grid-area: controls;
+        overflow: scroll;
+        padding-bottom: 1em;
+      }
+      .controls {
+        margin: auto;
+        width: 360px;
+      }
+      fieldset {
+        margin-top: 8px;
+        padding-top: 8px;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .input-row {
+        display: flex;
+        gap: 8px;
+        justify-content: space-between;
+      }
+      .input-range-container {
+        width: 100%;
+      }
+      .input-range-label {
+        display: flex;
+      }
+      input[type="range"] {
+        flex-grow: 1;
+      }
+      .fieldset-range .label-text {
+        width: 48px;
+      }
+      .label-value {
+        width: 40px;
+        text-align: right;
+      }
+      details {
+        margin-top: 8px;
+      }
+      summary {
+        font-weight: bold;
+      }
+      @media screen and (max-aspect-ratio: 1) {
+        main {
+          grid-template-columns: auto;
+          grid-template-rows: 100vw 1fr;
+          grid-template-areas:
+            "canvas"
+            "controls";
+        }
+      }
+      @media screen and (min-aspect-ratio: 1) {
+        main {
+          grid-template-columns: 2fr 1fr;
+          grid-template-rows: 100vh;
+          grid-template-areas: "canvas controls";
+        }
+        .controls-container {
+          min-width: 360px;
+          padding: 0 4px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>Sorry, you need to enable JavaScript to see this page.</noscript>
