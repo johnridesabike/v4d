@@ -61,7 +61,7 @@ end = struct
     mutable fs : ('a -> unit) list;
   }
 
-  let dirty = ref true
+  let dirty = ref false
   let make eq v = { eq; v; fs = [] }
   let get t = t.v
 
@@ -86,18 +86,99 @@ let state_scene = State.make scene_eq scene_cube
 let state_projection = State.make projection_eq Slice
 let state_slice = state_make_float 0.0
 let state_xy = state_make_float 0.0
-let state_yz = state_make_float (-20.0)
-let state_xz = state_make_float 30.0
-let state_xw = state_make_float 1.0
-let state_yw = state_make_float 1.0
-let state_zw = state_make_float 1.0
+let state_xz = state_make_float 0.0
+let state_yz = state_make_float 0.0
+let state_xw = state_make_float 0.0
+let state_yw = state_make_float 0.0
+let state_zw = state_make_float 0.0
 let state_auto_xy = state_make_bool false
-let state_auto_yz = state_make_bool false
 let state_auto_xz = state_make_bool false
+let state_auto_yz = state_make_bool false
 let state_auto_xw = state_make_bool false
 let state_auto_yw = state_make_bool false
 let state_auto_zw = state_make_bool false
 let state_auto_slice = state_make_bool false
+
+let state_reset () =
+  State.set state_scene scene_cube;
+  State.set state_projection Slice;
+  State.set state_slice 0.0;
+  State.set state_xy 0.0;
+  State.set state_xz 0.0;
+  State.set state_yz (-30.0);
+  State.set state_xw 0.0;
+  State.set state_yw 0.0;
+  State.set state_zw 45.0;
+  State.set state_auto_xy false;
+  State.set state_auto_xz true;
+  State.set state_auto_yz false;
+  State.set state_auto_xw false;
+  State.set state_auto_yw false;
+  State.set state_auto_zw false;
+  State.set state_auto_slice false
+
+let state_pause () =
+  State.set state_auto_xy false;
+  State.set state_auto_xz false;
+  State.set state_auto_yz false;
+  State.set state_auto_xw false;
+  State.set state_auto_yw false;
+  State.set state_auto_zw false;
+  State.set state_auto_slice false
+
+let state_double_rotate_cube () =
+  State.set state_scene scene_cube;
+  State.set state_projection Perspective;
+  (* State.set state_slice 0.0; (* Don't change. *) *)
+  State.set state_xy 0.0;
+  State.set state_xz (-145.0);
+  State.set state_yz (-15.0);
+  State.set state_xw 0.0;
+  State.set state_yw 0.0;
+  (* State.set state_zw 0.0; (* Don't change. *) *)
+  State.set state_auto_xy true;
+  State.set state_auto_xz false;
+  State.set state_auto_yz false;
+  State.set state_auto_xw false;
+  State.set state_auto_yw false;
+  State.set state_auto_zw true;
+  State.set state_auto_slice false
+
+let state_mirror_polycube () =
+  State.set state_scene scene_polycube;
+  State.set state_projection Slice;
+  State.set state_slice 0.0;
+  State.set state_xy 0.0;
+  State.set state_xz 30.0;
+  State.set state_yz (-20.0);
+  State.set state_xw 15.0;
+  State.set state_yw 15.0;
+  (* State.set state_zw 0.0; (* Don't change. *) *)
+  State.set state_auto_xy false;
+  State.set state_auto_xz false;
+  State.set state_auto_yz false;
+  State.set state_auto_xw false;
+  State.set state_auto_yw false;
+  State.set state_auto_zw true;
+  State.set state_auto_slice false
+
+let state_slice_cross () =
+  State.set state_scene scene_cross;
+  State.set state_projection Slice;
+  State.set state_slice 0.4;
+  State.set state_xy 20.0;
+  State.set state_xz 45.0;
+  State.set state_yz 45.0;
+  State.set state_xw 30.0;
+  State.set state_yw (-30.0);
+  State.set state_zw 0.0;
+  State.set state_auto_xy false;
+  State.set state_auto_xz true;
+  State.set state_auto_yz false;
+  State.set state_auto_xw false;
+  State.set state_auto_yw false;
+  State.set state_auto_zw true;
+  State.set state_auto_slice false
 
 type click_rotate =
   | Not_clicked
@@ -249,9 +330,7 @@ let el_input_shape scene label =
       El.set_prop El.Prop.checked (scene_eq v scene) el);
   el_input label el
 
-let el_controls_specialized = El.div []
-
-let el_input_projection projection children =
+let el_input_projection projection =
   let el =
     El.input ~at:[ At.type' (Jstr.v "radio"); At.name (Jstr.v "projection") ] ()
   in
@@ -261,8 +340,7 @@ let el_input_projection projection children =
        (El.as_target el);
   State.listen state_projection (fun v ->
       let b = projection_eq v projection in
-      El.set_prop El.Prop.checked b el;
-      if b then El.set_children el_controls_specialized children);
+      El.set_prop El.Prop.checked b el);
   el_input (projection_show projection) el
 
 let canvas, canvas_container =
@@ -321,8 +399,11 @@ let el_angle =
     ~auto_allowed:(function Perspective | Slice -> true | Oblique -> false)
     ~min:"-180" ~max:"180" ~step:"0.1" ~frac:0
 
-let el_angle_controls =
-  [
+let enable el = El.set_at (Jstr.v "disabled") None el
+let disable el = El.set_at (Jstr.v "disabled") (Some (Jstr.v "disabled")) el
+
+let el_controls_3d, el_controls_4d, el_controls_slice =
+  let el_3d =
     El.fieldset
       ~at:[ At.class' (Jstr.v "fieldset-range") ]
       [
@@ -330,7 +411,9 @@ let el_angle_controls =
         el_angle state_auto_xy state_xy "XY";
         el_angle state_auto_xz state_xz "XZ";
         el_angle state_auto_yz state_yz "YZ";
-      ];
+      ]
+  in
+  let el_4d =
     El.fieldset
       ~at:[ At.class' (Jstr.v "fieldset-range") ]
       [
@@ -338,8 +421,41 @@ let el_angle_controls =
         el_angle state_auto_xw state_xw "XW";
         el_angle state_auto_yw state_yw "YW";
         el_angle state_auto_zw state_zw "ZW";
-      ];
-  ]
+      ]
+  in
+  let el_slice =
+    El.fieldset
+      ~at:[ At.class' (Jstr.v "fieldset-range") ]
+      [
+        El.legend [ El.txt' "Slice" ];
+        el_range ~auto_allowed:(projection_eq Slice) ~min:"-2" ~max:"2"
+          ~step:"0.01" ~frac:2 state_auto_slice state_slice "Depth";
+      ]
+  in
+  State.listen state_projection (function
+    | Slice ->
+        enable el_3d;
+        enable el_4d;
+        enable el_slice
+    | Perspective ->
+        enable el_3d;
+        enable el_4d;
+        disable el_slice
+    | Oblique ->
+        disable el_3d;
+        disable el_4d;
+        disable el_slice);
+  (el_3d, el_4d, el_slice)
+
+let el_button txt f =
+  let el = El.button ~at:[ At.type' (Jstr.v "button") ] [ El.txt' txt ] in
+  ignore
+  @@ Ev.listen Ev.click
+       (fun e ->
+         Ev.prevent_default e;
+         f ())
+       (El.as_target el);
+  el
 
 let () =
   El.append_children (Document.body G.document)
@@ -364,22 +480,43 @@ let () =
                   El.fieldset
                     [
                       El.legend [ El.txt' "Projection" ];
-                      el_input_projection Slice
-                        (el_angle_controls
-                        @ [
-                            El.fieldset
-                              ~at:[ At.class' (Jstr.v "fieldset-range") ]
-                              [
-                                El.legend [ El.txt' "Slice" ];
-                                el_range ~auto_allowed:(projection_eq Slice)
-                                  ~min:"-2" ~max:"2" ~step:"0.01" ~frac:2
-                                  state_auto_slice state_slice "Depth";
-                              ];
-                          ]);
-                      el_input_projection Perspective el_angle_controls;
-                      el_input_projection Oblique [];
+                      el_input_projection Slice;
+                      el_input_projection Perspective;
+                      el_input_projection Oblique;
                     ];
-                  el_controls_specialized;
+                  el_controls_3d;
+                  el_controls_4d;
+                  el_controls_slice;
+                  El.fieldset
+                    [
+                      el_button "Reset" state_reset;
+                      el_button "Stop animation" state_pause;
+                    ];
+                  El.details
+                    ~at:
+                      [
+                        At.v (Jstr.v "open") (Jstr.v "true");
+                        At.class' (Jstr.v "points-of-interest");
+                      ]
+                    [
+                      El.summary [ El.txt' "Points of interest" ];
+                      El.p
+                        [
+                          el_button "Marvel at the tesseract's double rotation!"
+                            state_double_rotate_cube;
+                        ];
+                      El.p
+                        [
+                          el_button "Be amazed as the polycube mirrors itself!"
+                            state_mirror_polycube;
+                        ];
+                      El.p
+                        [
+                          el_button
+                            "Behold the cross from beyond visible space!"
+                            state_slice_cross;
+                        ];
+                    ];
                   El.details
                     [
                       El.summary [ El.txt' "What is this?" ];
@@ -404,8 +541,7 @@ let () =
                           El.txt' " The ";
                           El.strong [ El.txt' "polycube" ];
                           El.txt'
-                            " cannot be mirrored by 3D rotations, but it can \
-                             in 4D.";
+                            " cannot be mirrored in 3D space, but it can in 4D.";
                         ];
                       El.p
                         [
@@ -515,6 +651,7 @@ let rec animation_loop time =
   ignore @@ G.request_animation_frame animation_loop
 
 let () =
+  state_reset ();
   ignore
   @@ G.request_animation_frame (fun time ->
          start_time := time;
