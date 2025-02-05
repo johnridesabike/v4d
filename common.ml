@@ -78,17 +78,16 @@ module Path4d = struct
   let empty _ = P.empty
   let sub point path f = P.sub (f point) (path f)
   let line point path f = P.line (f point) (path f)
-  let map f t g = t (fun p -> f p |> g)
-  let to_path t = t (fun p -> P2.v (V4.x p) (V4.y p))
+  let v4_to_v2 p = V2.v (V4.x p) (V4.y p)
 
   let project_perspective distance path =
-    map
-      (fun p ->
+    path (fun p ->
         (* Project from a distance without shrinking the image. *)
-        let d = distance /. (distance -. V4.z p -. V4.w p) in
-        V4.mul (V4.v d d 1.0 1.0) p)
-      path
-    |> to_path
+        let denom = distance -. V4.z p -. V4.w p in
+        let d = if denom = 0.0 then 1.0 else distance /. denom in
+        V2.v (V4.x p *. d) (V4.y p *. d))
+
+  let project_aux rotate path = path (fun p -> V4.ltr rotate p |> v4_to_v2)
 
   let project_isometric =
     let a = asin (tan (Float.rad_of_deg 30.)) in
@@ -106,7 +105,7 @@ module Path4d = struct
             0.      0.        0.        (cos b)
     in
     let rotate = M4.mul rotate_x rotate_y in
-    fun path -> map (V4.ltr rotate) path |> to_path
+    project_aux rotate
 
   let project_dimetric =
     let a = Float.rad_of_deg 7. in
@@ -117,7 +116,7 @@ module Path4d = struct
             0.        0.  1.            0.
             0.        0.  0.            1.
     in
-    fun path -> map (V4.ltr rotate) path |> to_path
+    project_aux rotate
 
   let project_oblique =
     let a = Float.rad_of_deg 45. in
@@ -127,9 +126,7 @@ module Path4d = struct
             0.  0.  1.      0.
             0.  0.  0.      1.
     in
-    fun path -> map (V4.ltr rotate) path |> to_path
-
-  let project_id = to_path
+    project_aux rotate
 end
 
 module Polygon = struct

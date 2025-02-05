@@ -20,7 +20,6 @@ module Path4d : sig
   val project_isometric : t -> Vg.path
   val project_dimetric : t -> Vg.path
   val project_oblique : t -> Vg.path
-  val project_id : t -> Vg.path
 end
 
 module Polygon : sig
