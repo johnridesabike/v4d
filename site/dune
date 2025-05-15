@@ -1,0 +1,9 @@
+(rule
+ (action
+  (with-stdout-to
+   index.html
+   (progn
+    (cat %{dep:../webapp.html})
+    (echo "<script>\n")
+    (cat %{dep:../webapp.bc.js})
+    (echo "</script>\n")))))

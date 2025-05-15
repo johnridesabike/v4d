@@ -7,8 +7,10 @@ bug-reports: "https://github.com/johnridesabike/v4d/issues"
 depends: [
   "dune" {>= "3.17"}
   "ocaml"
+  "js_of_ocaml-compiler"
   "vg"
   "gg"
+  "brr"
   "odoc" {with-doc}
 ]
 build: [

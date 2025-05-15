@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "deploy": "netlify deploy --dir _build/default/site --site visualize4d --no-build --prod-if-unlocked"
+  },
+  "dependencies": {
+    "netlify-cli": "^21.4.2"
+  }
+}

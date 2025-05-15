@@ -13,4 +13,4 @@
 
 (package
  (name visualize4d)
- (depends ocaml vg gg))
+ (depends ocaml js_of_ocaml-compiler vg gg brr))
