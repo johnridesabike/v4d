@@ -1,0 +1,22 @@
+image: ubuntu/lts
+packages:
+  - opam
+  - nodejs
+  - npm
+sources:
+  - https://git.sr.ht/~johnridesabike/v4d
+secrets:
+  - 4648aeba-a81e-442c-bc37-5118709e8535
+tasks:
+  - install: |
+      cd v4d
+      opam init --auto-setup --bare
+      opam switch create . --deps-only --yes
+      npm ci
+  - deploy: |
+      set +x
+      . ~/.netlify_auth
+      set -x
+      cd v4d
+      opam exec -- dune build site/index.html --profile release
+      npm run deploy
